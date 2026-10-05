@@ -463,3 +463,223 @@ body {
   85%  { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -10px); }
 }
+
+/* ─────────────────────────────────────────
+   SCREEN 5: ID, QR
+───────────────────────────────────────── */
+.id-qr-screen {
+  position: relative;
+  width: 100%;
+  height: 874px;
+  background: #F95F49;
+  overflow: hidden;
+  user-select: none;
+}
+
+.qr-back-btn {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.qr-back-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.brand-title-qr {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Delicious Handrawn', cursive;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 21px;
+  text-align: center;
+  color: #000000;
+  margin: 0;
+}
+
+.qr-card {
+  box-sizing: border-box;
+  position: absolute;
+  width: 290px;
+  height: 317px;
+  left: calc(50% - 290px/2);
+  top: 211px;
+  background: #FFFFFF;
+  border: 0.7px solid #000000;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 19px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.qr-image-wrapper {
+  width: 242px;
+  height: 242px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-code-img {
+  width: 242px;
+  height: 242px;
+  object-fit: contain;
+  display: block;
+}
+
+.qr-pet-name {
+  position: absolute;
+  bottom: 19px;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 21px;
+  text-align: center;
+  color: #000000;
+}
+
+.qr-actions-row {
+  box-sizing: border-box;
+  position: absolute;
+  top: 538px;
+  left: calc(50% - 290px/2);
+  width: 290px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qr-action-btn {
+  box-sizing: border-box;
+  width: 88px;
+  height: 65px;
+  background: #FFFFFF;
+  border: 0.7px solid #000000;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.qr-action-btn:hover {
+  background: #FDFDFD;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.qr-action-btn:active {
+  transform: scale(0.96);
+}
+
+.qr-action-label {
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 12px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #010101;
+  white-space: nowrap;
+}
+
+.qr-suggestion-text {
+  position: absolute;
+  top: 625px;
+  left: calc(50% - 272px/2 + 4px);
+  width: 272px;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #000000;
+}
+
+/* ─────────────────────────────────────────
+   DEV SCREEN SWITCHER
+───────────────────────────────────────── */
+.viewport-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.dev-screen-switcher {
+  display: flex;
+  gap: 8px;
+  background: rgba(30, 30, 30, 0.85);
+  padding: 6px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dev-screen-btn {
+  background: transparent;
+  color: #a0a0a0;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dev-screen-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dev-screen-btn.active {
+  background: #F95F49;
+  color: #000000;
+  font-weight: 600;
+}
+
+@media (max-width: 450px) {
+  .viewport-container {
+    padding: 0;
+    gap: 0;
+    width: 100vw;
+    height: 100dvh;
+  }
+  .dev-screen-switcher {
+    display: none;
+  }
+}
+
