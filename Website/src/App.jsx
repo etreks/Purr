@@ -14,8 +14,8 @@ export default function App() {
   // Details form state
   const [ownerName, setOwnerName] = useState('');
   const [address, setAddress] = useState('');
-  const [petName, setPetName] = useState('Ponya');
-  const [petSpecies, setPetSpecies] = useState('Cat');
+  const [petName, setPetName] = useState('');
+  const [petSpecies, setPetSpecies] = useState('');
   const [otherSpecies, setOtherSpecies] = useState('');
   const [bio, setBio] = useState('');
   const [petPhoto, setPetPhoto] = useState(null);
@@ -29,45 +29,14 @@ export default function App() {
     }
   }, [currentScreen]);
 
-  // Load any previously saved user data from private file / localStorage
+  // Clear any old stale demo cache from localStorage on load
   useEffect(() => {
-    const fetchExistingProfile = async () => {
-      try {
-        const res = await fetch('/api/get-users');
-        if (res.ok) {
-          const users = await res.json();
-          if (Array.isArray(users) && users.length > 0) {
-            const latest = users[users.length - 1];
-            if (latest.phoneNumber) {
-              const digitsOnly = latest.phoneNumber.replace(/\D/g, '').slice(-10);
-              setPhoneNumber(digitsOnly);
-            }
-            if (latest.ownerName) setOwnerName(latest.ownerName);
-            if (latest.address) setAddress(latest.address);
-            if (latest.petName) setPetName(latest.petName);
-            if (latest.petSpecies) setPetSpecies(latest.petSpecies);
-            if (latest.otherSpecies) setOtherSpecies(latest.otherSpecies);
-            if (latest.bio) setBio(latest.bio);
-            if (latest.petPhoto) setPetPhoto(latest.petPhoto);
-          }
-        }
-      } catch (e) {
-        // Fallback to localStorage if API is unreachable
-        try {
-          const cached = localStorage.getItem('purr_user_profile');
-          if (cached) {
-            const data = JSON.parse(cached);
-            if (data.ownerName) setOwnerName(data.ownerName);
-            if (data.petName) setPetName(data.petName);
-            if (data.petSpecies) setPetSpecies(data.petSpecies);
-            if (data.address) setAddress(data.address);
-            if (data.bio) setBio(data.bio);
-            if (data.petPhoto) setPetPhoto(data.petPhoto);
-          }
-        } catch {}
+    try {
+      const cached = localStorage.getItem('purr_user_profile');
+      if (cached && (cached.includes('Ponya') || cached.includes('9876543210'))) {
+        localStorage.removeItem('purr_user_profile');
       }
-    };
-    fetchExistingProfile();
+    } catch {}
   }, []);
 
   const showToast = (msg) => {
@@ -94,17 +63,34 @@ export default function App() {
     }
 
     setPhoneNumber(digits);
-    if (phoneError) setPhoneError('');
+
+    // Validate prefix: Indian mobile numbers must start with 6, 7, 8, or 9
+    if (digits.length > 0 && !['6', '7', '8', '9'].includes(digits[0])) {
+      setPhoneError('Indian mobile numbers start with 6, 7, 8, or 9');
+    } else {
+      setPhoneError('');
+    }
   };
 
   const handlePhoneSubmit = (e) => {
     e.preventDefault();
 
-    // Strict Indian mobile number validation (10 digits starting with 6, 7, 8, or 9)
+    if (!phoneNumber) {
+      setPhoneError('Please enter your 10-digit mobile number');
+      showToast('Please enter your mobile number');
+      return;
+    }
+
+    // Strict Indian mobile number validation
     const indianRegex = /^[6-9]\d{9}$/;
     if (!indianRegex.test(phoneNumber)) {
-      setPhoneError('Invalid');
-      showToast('Invalid');
+      if (phoneNumber.length < 10) {
+        setPhoneError(`10 digits required (${phoneNumber.length}/10 entered)`);
+        showToast('Please enter a complete 10-digit number');
+      } else {
+        setPhoneError('Indian numbers must start with 6, 7, 8, or 9');
+        showToast('Invalid Indian mobile number');
+      }
       return;
     }
 
@@ -221,7 +207,7 @@ export default function App() {
 
   // QR Screen Action Handlers
   const handleShareProfile = async () => {
-    const displayName = petName.trim() || 'Ponya';
+    const displayName = petName.trim() || 'Pet';
     const shareData = {
       title: `${displayName}'s Profile on Purr`,
       text: `Meet ${displayName} on Purr — Your Pet's town!`,
@@ -256,7 +242,7 @@ export default function App() {
   };
 
   const handleDownload = () => {
-    const displayName = petName.trim() || 'Ponya';
+    const displayName = petName.trim() || 'Pet';
     const link = document.createElement('a');
     link.href = '/assets/qr_code.png';
     link.download = `${displayName}-QR.png`;
@@ -316,7 +302,11 @@ export default function App() {
                       autoFocus
                     />
                   </div>
-                  {phoneError && <span className="field-error-text">{phoneError}</span>}
+                  {phoneError ? (
+                    <span className="field-error-text">{phoneError}</span>
+                  ) : (
+                    <span className="field-hint-text">Enter 10-digit Indian mobile number</span>
+                  )}
                 </div>
 
                 <button type="submit" className="btn-primary" disabled={isLoading}>
@@ -433,7 +423,7 @@ export default function App() {
                   <input
                     type="text"
                     className="details-input"
-                    placeholder='e.g. "Ponya"'
+                    placeholder="Enter pet's name"
                     value={petName}
                     onChange={(e) => setPetName(e.target.value)}
                   />
@@ -508,7 +498,7 @@ export default function App() {
                   className="qr-code-img"
                 />
               </div>
-              <p className="qr-pet-name">{petName.trim() || 'Ponya'}</p>
+              <p className="qr-pet-name">{petName.trim() || 'Pet'}</p>
             </div>
 
             {/* Action Buttons Row */}
