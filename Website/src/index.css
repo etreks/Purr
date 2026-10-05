@@ -403,6 +403,36 @@ body {
 }
 .photo-box:hover { opacity: 1; }
 
+/* Required state — dashed animated border */
+.photo-box-required {
+  border: 2px dashed #E53935;
+  animation: pulse-border 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #E53935; }
+  50%       { border-color: rgba(229, 57, 53, 0.35); }
+}
+
+.photo-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.photo-required-hint {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: #E53935;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+
+
 .photo-preview {
   width: 100%;
   height: 100%;

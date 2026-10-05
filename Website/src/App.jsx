@@ -155,6 +155,7 @@ export default function App() {
   // Save details to private file on disk and localStorage
   const handleDetailsSave = async (e) => {
     e.preventDefault();
+    if (!petPhoto) { showToast("Please add a photo of your pet 📷"); return; }
     if (!ownerName.trim()) { showToast("Please enter owner's name"); return; }
     if (!petName.trim()) { showToast("Please enter your pet's name"); return; }
     if (!petSpecies && !otherSpecies.trim()) { showToast('Please select or enter a pet species'); return; }
@@ -370,12 +371,20 @@ export default function App() {
               <ArrowLeft size={18} />
             </button>
             <div className="details-scroll">
-              {/* Photo Upload */}
+              {/* Photo Upload — mandatory */}
               <div className="photo-upload-area">
-                <div className="photo-box" onClick={() => fileInputRef.current?.click()}>
+                <div
+                  className={`photo-box${!petPhoto ? ' photo-box-required' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   {petPhoto
                     ? <img src={petPhoto} alt="Pet" className="photo-preview" />
-                    : <Camera size={24} color="#848484" />
+                    : (
+                      <div className="photo-empty-state">
+                        <Camera size={24} color={"#848484"} />
+                        <span className="photo-required-hint">Required</span>
+                      </div>
+                    )
                   }
                 </div>
                 <button className="photo-plus-btn" onClick={() => fileInputRef.current?.click()} type="button">
