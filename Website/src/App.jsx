@@ -94,34 +94,17 @@ export default function App() {
     }
 
     setPhoneNumber(digits);
-
-    // Validate prefix: Indian mobile numbers must start with 6, 7, 8, or 9
-    if (digits.length > 0 && !['6', '7', '8', '9'].includes(digits[0])) {
-      setPhoneError('Indian mobile numbers start with 6, 7, 8, or 9');
-    } else {
-      setPhoneError('');
-    }
+    if (phoneError) setPhoneError('');
   };
 
   const handlePhoneSubmit = (e) => {
     e.preventDefault();
 
-    if (!phoneNumber) {
-      setPhoneError('Please enter your 10-digit mobile number');
-      showToast('Please enter your mobile number');
-      return;
-    }
-
-    // Strict Indian mobile number validation
+    // Strict Indian mobile number validation (10 digits starting with 6, 7, 8, or 9)
     const indianRegex = /^[6-9]\d{9}$/;
     if (!indianRegex.test(phoneNumber)) {
-      if (phoneNumber.length < 10) {
-        setPhoneError(`10 digits required (${phoneNumber.length}/10 entered)`);
-        showToast('Please enter a complete 10-digit number');
-      } else {
-        setPhoneError('Indian numbers must start with 6, 7, 8, or 9');
-        showToast('Invalid Indian mobile number');
-      }
+      setPhoneError('Invalid');
+      showToast('Invalid');
       return;
     }
 
@@ -333,11 +316,7 @@ export default function App() {
                       autoFocus
                     />
                   </div>
-                  {phoneError ? (
-                    <span className="field-error-text">{phoneError}</span>
-                  ) : (
-                    <span className="field-hint-text">Enter 10-digit Indian mobile number</span>
-                  )}
+                  {phoneError && <span className="field-error-text">{phoneError}</span>}
                 </div>
 
                 <button type="submit" className="btn-primary" disabled={isLoading}>
