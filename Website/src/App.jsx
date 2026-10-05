@@ -192,7 +192,7 @@ export default function App() {
 
     setIsLoading(true);
 
-    const fullPhoneNumber = phoneNumber ? `+91 ${phoneNumber}` : '+91 9876543210';
+    const fullPhoneNumber = phoneNumber ? `+91 ${phoneNumber}` : '';
     const profile = {
       phoneNumber: fullPhoneNumber,
       ownerName: ownerName.trim(),
@@ -327,7 +327,7 @@ export default function App() {
                       inputMode="numeric"
                       maxLength={10}
                       className="custom-phone-input"
-                      placeholder="98765 43210"
+                      placeholder="Enter phone number"
                       value={phoneNumber}
                       onChange={handlePhoneChange}
                       autoFocus
