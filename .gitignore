@@ -25,3 +25,8 @@ yarn-error.log*
 
 # Vite cache
 .vite/
+
+# Private user profile data (local storage only)
+data/
+*.private.json
+

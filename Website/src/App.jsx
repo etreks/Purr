@@ -6,6 +6,7 @@ export default function App() {
   // Screens: 'landing' | 'login_phone' | 'login_otp' | 'details' | 'id_qr'
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,54 +21,219 @@ export default function App() {
   const [petPhoto, setPetPhoto] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Auto-advance splash screen after 2.5s
+  // Auto-advance splash screen after 2.2s
   useEffect(() => {
     if (currentScreen === 'landing') {
-      const timer = setTimeout(() => setCurrentScreen('login_phone'), 2500);
+      const timer = setTimeout(() => setCurrentScreen('login_phone'), 2200);
       return () => clearTimeout(timer);
     }
   }, [currentScreen]);
 
+  // Load any previously saved user data from private file / localStorage
+  useEffect(() => {
+    const fetchExistingProfile = async () => {
+      try {
+        const res = await fetch('/api/get-users');
+        if (res.ok) {
+          const users = await res.json();
+          if (Array.isArray(users) && users.length > 0) {
+            const latest = users[users.length - 1];
+            if (latest.phoneNumber) {
+              const digitsOnly = latest.phoneNumber.replace(/\D/g, '').slice(-10);
+              setPhoneNumber(digitsOnly);
+            }
+            if (latest.ownerName) setOwnerName(latest.ownerName);
+            if (latest.address) setAddress(latest.address);
+            if (latest.petName) setPetName(latest.petName);
+            if (latest.petSpecies) setPetSpecies(latest.petSpecies);
+            if (latest.otherSpecies) setOtherSpecies(latest.otherSpecies);
+            if (latest.bio) setBio(latest.bio);
+            if (latest.petPhoto) setPetPhoto(latest.petPhoto);
+          }
+        }
+      } catch (e) {
+        // Fallback to localStorage if API is unreachable
+        try {
+          const cached = localStorage.getItem('purr_user_profile');
+          if (cached) {
+            const data = JSON.parse(cached);
+            if (data.ownerName) setOwnerName(data.ownerName);
+            if (data.petName) setPetName(data.petName);
+            if (data.petSpecies) setPetSpecies(data.petSpecies);
+            if (data.address) setAddress(data.address);
+            if (data.bio) setBio(data.bio);
+            if (data.petPhoto) setPetPhoto(data.petPhoto);
+          }
+        } catch {}
+      }
+    };
+    fetchExistingProfile();
+  }, []);
+
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 2500);
+    setTimeout(() => setToastMessage(''), 2800);
+  };
+
+  // Indian Phone input handler (only digits, max 10 digits)
+  const handlePhoneChange = (e) => {
+    let raw = e.target.value;
+    // Strip everything except digits
+    let digits = raw.replace(/\D/g, '');
+
+    // If user pasted 91 or +91 at beginning with more than 10 digits
+    if (digits.length > 10 && digits.startsWith('91')) {
+      digits = digits.slice(2);
+    } else if (digits.length > 10 && digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+
+    // Limit to exactly 10 digits
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+
+    setPhoneNumber(digits);
+
+    // Validate prefix: Indian mobile numbers must start with 6, 7, 8, or 9
+    if (digits.length > 0 && !['6', '7', '8', '9'].includes(digits[0])) {
+      setPhoneError('Indian mobile numbers start with 6, 7, 8, or 9');
+    } else {
+      setPhoneError('');
+    }
   };
 
   const handlePhoneSubmit = (e) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) { showToast('Please enter your phone number'); return; }
+
+    if (!phoneNumber) {
+      setPhoneError('Please enter your 10-digit mobile number');
+      showToast('Please enter your mobile number');
+      return;
+    }
+
+    // Strict Indian mobile number validation
+    const indianRegex = /^[6-9]\d{9}$/;
+    if (!indianRegex.test(phoneNumber)) {
+      if (phoneNumber.length < 10) {
+        setPhoneError(`10 digits required (${phoneNumber.length}/10 entered)`);
+        showToast('Please enter a complete 10-digit number');
+      } else {
+        setPhoneError('Indian numbers must start with 6, 7, 8, or 9');
+        showToast('Invalid Indian mobile number');
+      }
+      return;
+    }
+
     setIsLoading(true);
+    setPhoneError('');
+    const fullNumber = `+91 ${phoneNumber}`;
+
     setTimeout(() => {
       setIsLoading(false);
-      setCurrentScreen('login_otp');
-      showToast('OTP sent to ' + phoneNumber);
-    }, 400);
+      showToast(`Phone number saved: ${fullNumber}`);
+      // Skip OTP for now as requested; transition directly to Details registration
+      setCurrentScreen('details');
+    }, 350);
   };
 
   const handleOtpSubmit = (e) => {
     e.preventDefault();
-    if (!otpCode.trim()) { showToast('Please enter the 6-digit code'); return; }
+    if (!otpCode.trim()) { showToast('Please enter the verification code'); return; }
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       setCurrentScreen('details');
-    }, 500);
+    }, 400);
   };
 
+  // Convert uploaded image to resized base64 data URL so it can be saved in private file
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file) setPetPhoto(URL.createObjectURL(file));
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setPetPhoto(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleDetailsSave = (e) => {
+  // Save details to private file on disk and localStorage
+  const handleDetailsSave = async (e) => {
     e.preventDefault();
-    if (!ownerName.trim()) { showToast('Please enter your name'); return; }
+    if (!ownerName.trim()) { showToast("Please enter owner's name"); return; }
     if (!petName.trim()) { showToast("Please enter your pet's name"); return; }
-    if (!petSpecies) { showToast('Please select a pet species'); return; }
-    showToast('Profile saved! 🐾');
-    setTimeout(() => {
-      setCurrentScreen('id_qr');
-    }, 400);
+    if (!petSpecies && !otherSpecies.trim()) { showToast('Please select or enter a pet species'); return; }
+
+    setIsLoading(true);
+
+    const fullPhoneNumber = phoneNumber ? `+91 ${phoneNumber}` : '+91 9876543210';
+    const profile = {
+      phoneNumber: fullPhoneNumber,
+      ownerName: ownerName.trim(),
+      address: address.trim(),
+      petName: petName.trim(),
+      petSpecies: petSpecies || otherSpecies.trim(),
+      otherSpecies: otherSpecies.trim(),
+      bio: bio.trim(),
+      petPhoto: petPhoto || null,
+      savedAt: new Date().toISOString(),
+    };
+
+    // 1. Save to browser localStorage as cache
+    try {
+      localStorage.setItem('purr_user_profile', JSON.stringify(profile));
+    } catch (err) {
+      console.warn('LocalStorage error:', err);
+    }
+
+    // 2. Persist to local private JSON file via backend API
+    try {
+      const response = await fetch('/api/save-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+      const result = await response.json();
+      if (result.success) {
+        showToast('Profile saved to private file! 🐾');
+      } else {
+        showToast('Profile saved! 🐾');
+      }
+    } catch (err) {
+      console.error('File save error:', err);
+      showToast('Profile saved locally! 🐾');
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        setCurrentScreen('id_qr');
+      }, 400);
+    }
   };
 
   // QR Screen Action Handlers
@@ -137,7 +303,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SCREEN 2: PHONE LOGIN */}
+        {/* SCREEN 2: PHONE LOGIN (Only Indian numbers with constant +91) */}
         {currentScreen === 'login_phone' && (
           <div className="auth-screen">
             <button className="back-btn" onClick={() => setCurrentScreen('landing')}>
@@ -146,27 +312,45 @@ export default function App() {
             <div className="auth-card">
               <h1 className="brand-title-auth">PURR</h1>
               <p className="brand-subtitle-auth">Your Pet's town</p>
+
               <form onSubmit={handlePhoneSubmit} className="auth-form">
                 <div className="input-field-container">
                   <label className="input-label">Phone no</label>
-                  <input
-                    type="tel"
-                    className="custom-input"
-                    placeholder="Enter phone number"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    autoFocus
-                  />
+                  <div className={`phone-input-wrapper ${phoneError ? 'input-error' : ''}`}>
+                    <div className="phone-prefix-badge">
+                      <span className="country-flag" role="img" aria-label="India flag">🇮🇳</span>
+                      <span className="prefix-code">+91</span>
+                    </div>
+                    <div className="phone-prefix-divider" />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      className="custom-phone-input"
+                      placeholder="98765 43210"
+                      value={phoneNumber}
+                      onChange={handlePhoneChange}
+                      autoFocus
+                    />
+                  </div>
+                  {phoneError ? (
+                    <span className="field-error-text">{phoneError}</span>
+                  ) : (
+                    <span className="field-hint-text">Enter 10-digit Indian mobile number</span>
+                  )}
                 </div>
+
                 <button type="submit" className="btn-primary" disabled={isLoading}>
-                  {isLoading ? 'Sending OTP...' : 'Continue'}
+                  {isLoading ? 'Saving...' : 'Continue'}
                 </button>
               </form>
+
               <div className="divider-container">
                 <div className="divider-line" />
                 <span className="divider-text">or continue with:</span>
                 <div className="divider-line" />
               </div>
+
               <div className="auth-footer-text">
                 Already have an Account? <strong>Log in</strong>
               </div>
@@ -174,7 +358,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SCREEN 3: OTP VERIFICATION */}
+        {/* SCREEN 3: OTP VERIFICATION (Available if needed in future) */}
         {currentScreen === 'login_otp' && (
           <div className="auth-screen">
             <button className="back-btn" onClick={() => setCurrentScreen('login_phone')}>
@@ -201,9 +385,9 @@ export default function App() {
                 </button>
               </form>
               <div className="resend-link">
-                Did't receive a code?{' '}
+                Didn't receive a code?{' '}
                 <span className="resend-link-action" onClick={() => showToast('New OTP sent!')}>
-                  Resent Code
+                  Resend Code
                 </span>
               </div>
             </div>
@@ -213,7 +397,7 @@ export default function App() {
         {/* SCREEN 4: DETAILS / PROFILE SETUP */}
         {currentScreen === 'details' && (
           <div className="details-screen">
-            <button className="back-btn" onClick={() => setCurrentScreen('login_otp')}>
+            <button className="back-btn" onClick={() => setCurrentScreen('login_phone')}>
               <ArrowLeft size={18} />
             </button>
             <div className="details-scroll">
@@ -225,7 +409,7 @@ export default function App() {
                     : <Camera size={24} color="#848484" />
                   }
                 </div>
-                <button className="photo-plus-btn" onClick={() => fileInputRef.current?.click()}>
+                <button className="photo-plus-btn" onClick={() => fileInputRef.current?.click()} type="button">
                   <Plus size={12} color="#EDEDED" />
                 </button>
                 <input
@@ -320,8 +504,8 @@ export default function App() {
                 </div>
 
                 {/* Save Button */}
-                <button type="submit" className="btn-save-continue">
-                  Save and Continue
+                <button type="submit" className="btn-save-continue" disabled={isLoading}>
+                  {isLoading ? 'Saving...' : 'Save and Continue'}
                 </button>
               </form>
             </div>
@@ -374,7 +558,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Screen quick switcher for easy navigation */}
+      {/* Screen quick switcher for preview and testing */}
       <div className="dev-screen-switcher">
         <button
           className={`dev-screen-btn ${currentScreen === 'landing' ? 'active' : ''}`}
